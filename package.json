@@ -1,0 +1,60 @@
+{
+  "name": "serverless-kms-secrets",
+  "version": "0.9.0",
+  "engines": {
+    "node": ">=4.0"
+  },
+  "description": "Serverless plugin for encrypting secrets using KMS",
+  "author": "Mikael Puittinen (https://sc5.io)",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SC5/serverless-kms-secrets.git"
+  },
+  "keywords": [
+    "serverless framework plugin",
+    "serverless applications",
+    "serverless plugins",
+    "kms",
+    "encryption",
+    "environment variables",
+    "lambda",
+    "aws",
+    "aws lambda",
+    "amazon",
+    "amazon web services",
+    "serverless.com"
+  ],
+  "main": "index.js",
+  "bin": {},
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "concat-stream": "^1.6.0",
+    "eslint": "^3.3.1",
+    "eslint-config-airbnb": "^10.0.1",
+    "eslint-config-airbnb-base": "^5.0.2",
+    "eslint-plugin-import": "^1.13.0",
+    "eslint-plugin-jsx-a11y": "^2.1.0",
+    "eslint-plugin-react": "^6.1.1",
+    "serverless": "^1.7.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.6.3",
+    "bluebird": "3.4.6",
+    "chai": "^3.5.0",
+    "fs-extra": "^1.0.0",
+    "mocha": "^3.1.2",
+    "yaml-edit": "^0.1.3",
+    "yamljs": "^0.2.10"
+  },
+  "bugs": {
+    "url": "https://github.com/SC5/serverless-kms-secrets/issues"
+  },
+  "homepage": "https://github.com/SC5/serverless-kms-secrets#readme",
+  "directories": {
+    "test": "test"
+  }
+}
