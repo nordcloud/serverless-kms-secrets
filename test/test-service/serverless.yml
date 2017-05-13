@@ -1,0 +1,25 @@
+service: mocha-test-suite
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  environment:
+    STAGE: ${opt:stage, self:provider.stage}-stage-test
+    MY_VARIABLE: ${self:custom.kmsSecrets.secrets.MY_VARIABLE}
+#  iamRoleStatements:
+#    - Effect: Allow
+#      Action:
+#      - KMS:Decrypt
+#      Resource: ${self:custom.kmsSecrets.keyArn}
+
+functions:
+  hello:
+    handler: handler.hello
+
+plugins:
+  - serverless-kms-secrets
+
+custom:
+  serverless-kms-secrets:
+    keyId: id
+    kmsSecrets: ${file(kms-secrets.${opt:stage, self:provider.stage}.${opt:region, self:provider.region}.yml)}
