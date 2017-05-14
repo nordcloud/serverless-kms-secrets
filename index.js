@@ -7,7 +7,6 @@
 
 const path = require('path');
 const fse = require('fs-extra');
-const utils = require('./utils');
 const BbPromise = require('bluebird');
 const yaml= require('yamljs');
 const AWS = require('aws-sdk');
