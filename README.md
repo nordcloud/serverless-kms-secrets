@@ -30,7 +30,7 @@ Configure the plugin into the custom block in `serverless.yml`. For example:
 
 ```yml
 custom:
-  serverless-kms-secrets
+  serverless-kms-secrets:
     keyId: [your hexadecimal KMS Key Id]
   kmsSecrets: ${file(kms-secrets.${opt:stage, self:provider.stage}.${opt:region, self:provider.region}.yml)}
 ```
