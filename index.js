@@ -12,26 +12,6 @@ const AWS = require('aws-sdk');
 
 AWS.config.setPromisesDependency(BbPromise);
 
-// Update new value into the serverless key config file
-function updateFile(filePath, varName, encValue, keyArn) {
-  return new BbPromise((resolve) => {
-    let kmsSecrets = {
-      secrets: {},
-      keyArn,
-    };
-
-    if (fse.existsSync(filePath)) {
-      kmsSecrets = yaml.load(filePath);
-    }
-
-    kmsSecrets.secrets[varName] = encValue;
-    kmsSecrets.keyArn = keyArn;
-
-    fse.writeFileSync(filePath, yaml.stringify(kmsSecrets, 2));
-    return resolve();
-  });
-}
-
 function readFile(filePath) {
   return new BbPromise((resolve, reject) => {
     if (!fse.existsSync(filePath)) {
@@ -66,6 +46,11 @@ class kmsSecretsPlugin {
             shortcut: 'v',
             required: true,
           },
+          keyid: {
+            usage: 'KMS key Id',
+            shortcut: 'k',
+            required: false
+          }
         },
       },
       decrypt: {
@@ -109,21 +94,33 @@ class kmsSecretsPlugin {
       const vars = new myModule.serverless.classes.Variables(myModule.serverless);
       vars.populateService(this.options);
 
-      const moduleConfig = inited.custom['serverless-kms-secrets'];
-      if (!moduleConfig) {
-        myModule.serverless.cli.log('No configuration for serverless-kms-secrets in serverless.yml'); // eslint-disable-line max-len
-        return;
-      }
-      if (!moduleConfig.keyId) {
-        myModule.serverless.cli.log('No keyId in serverless.yml');
-        return;
-      }
+      const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
+
+      const region = this.options.region || inited.provider.region;
+      const stage = this.options.stage || inited.provider.stage;
 
       const configFile =
         moduleConfig.secretsFile
-          || `kms-secrets.${inited.provider.stage}.${inited.provider.region}.yml`;
+          || `kms-secrets.${stage}.${region}.yml`;
+      let kmsSecrets = {
+        secrets: {}
+      };
+      let keyId = this.options.keyid;
 
-      AWS.config.update({ region: inited.provider.region });
+      if (fse.existsSync(configFile)) {
+        kmsSecrets = yaml.load(configFile)
+        if (! keyId) {
+          keyId = kmsSecrets.keyArn.replace(/.*\//, '');
+          myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
+        }  
+      } else {
+        if (! this.options.keyid) {
+          myModule.serverless.cli.log(`No config file ${configFile} and no keyid specified`);
+          return ('No keyId in serverless.yml')
+        }
+      }
+
+      AWS.config.update({ region });
       const kms = new AWS.KMS();
       kms.encrypt({
         KeyId: moduleConfig.keyId, // The identifier of the CMK to use for encryption.
@@ -132,16 +129,10 @@ class kmsSecretsPlugin {
         Plaintext: Buffer(this.options.value), // eslint-disable-line new-cap
       }).promise()
       .then((data) => {
-        updateFile(
-          configFile,
-          this.options.name,
-          data.CiphertextBlob.toString('base64'),
-          data.KeyId)
-        .then(() => {
-          myModule.serverless.cli.log(`Updated ${this.options.name} to ${configFile}`);
-        }, error => {
-          myModule.serverless.cli.log(`Error updating ${configFile} : ${error}`);
-        });
+        kmsSecrets.secrets[this.options.name] = data.CiphertextBlob.toString('base64');
+        kmsSecrets.keyArn = data.KeyId;
+        fse.writeFileSync(configFile, yaml.stringify(kmsSecrets,2));
+        myModule.serverless.cli.log(`Updated ${this.options.name} to ${configFile}`);
       }, error => {
         myModule.serverless.cli.log(error);
       });

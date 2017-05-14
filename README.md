@@ -31,7 +31,7 @@ Configure the plugin into the custom block in `serverless.yml`. For example:
 ```yml
 custom:
   serverless-kms-secrets:
-    keyId: [your hexadecimal KMS Key Id]
+    secretsFile: kms-secrets.${opt:stage, self:provider.stage}.${opt:region, self:provider.region}.yml (optional)
   kmsSecrets: ${file(kms-secrets.${opt:stage, self:provider.stage}.${opt:region, self:provider.region}.yml)}
 ```
 
@@ -52,15 +52,15 @@ Add Decrypt permissions to your lambda function with e.g. this block in IamRoleS
 
 To encrypt a variable using the key defined in the configuration, enter
 ```
-sls encrypt -n VARIABLE_NAME -v myvalue
+sls encrypt -n VARIABLE_NAME -v myvalue [-k keyId]
 ```
 
 e.g.
 
 ```
-sls encrypt -n SLACK_API_TOKEN -v xoxp-1234567890-1234567890-123467890-a12346
+sls encrypt -n SLACK_API_TOKEN -v xoxp-1234567890-1234567890-123467890-a12346 -k 999999-9999-99999-999
 ```
-
+The keyid (-k) parameter is mandatory for the first encrypted variable, but optional for the later ones (will be read from the secrets file).
 The encrypted variable is written to your secrets file (kms-secrets.[stage].[region].yml by default)
 
 ### Decrypting Variables
