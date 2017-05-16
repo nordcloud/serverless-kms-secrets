@@ -156,10 +156,6 @@ class kmsSecretsPlugin {
       vars.populateService(this.options);
 
       const moduleConfig = inited.custom['serverless-kms-secrets'];
-      if (!moduleConfig) {
-        myModule.serverless.cli.log('No configuration for serverless-kms-secrets in serverless.yml'); // eslint-disable-line max-len
-        return;
-      }
 
       const configFile =
         moduleConfig.secretsFile
