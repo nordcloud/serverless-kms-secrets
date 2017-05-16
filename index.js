@@ -123,7 +123,7 @@ class kmsSecretsPlugin {
       AWS.config.update({ region });
       const kms = new AWS.KMS();
       kms.encrypt({
-        KeyId: moduleConfig.keyId, // The identifier of the CMK to use for encryption.
+        KeyId: keyId, // The identifier of the CMK to use for encryption.
         // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
         // or the name or ARN of an alias that refers to the CMK.
         Plaintext: Buffer(this.options.value), // eslint-disable-line new-cap
