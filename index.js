@@ -156,10 +156,13 @@ class kmsSecretsPlugin {
       vars.populateService(this.options);
 
       const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
+      
+      const stage = this.options.stage || inited.provider.stage;
+      const region = this.options.region || inited.provider.region;
 
       const configFile =
         moduleConfig.secretsFile
-          || `kms-secrets.${inited.provider.stage}.${inited.provider.region}.yml`;
+          || `kms-secrets.${stage}.${region}.yml`;
       myModule.serverless.cli.log(`Decrypting secrets from ${configFile}`);
 
       readFile(configFile)
@@ -167,7 +170,7 @@ class kmsSecretsPlugin {
         const names = this.options.name ? [this.options.name] : Object.keys(secrets);
         names.forEach((varName) => {
           if (secrets[varName]) {
-            AWS.config.update({ region: inited.provider.region });
+            AWS.config.update({ region });
             const kms = new AWS.KMS();
             kms.decrypt({
               CiphertextBlob: Buffer(secrets[varName], 'base64'), // eslint-disable-line new-cap
