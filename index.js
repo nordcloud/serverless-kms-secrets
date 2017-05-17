@@ -155,7 +155,7 @@ class kmsSecretsPlugin {
       const vars = new myModule.serverless.classes.Variables(myModule.serverless);
       vars.populateService(this.options);
 
-      const moduleConfig = inited.custom['serverless-kms-secrets'];
+      const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
 
       const configFile =
         moduleConfig.secretsFile
