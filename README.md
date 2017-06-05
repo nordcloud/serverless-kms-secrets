@@ -3,8 +3,6 @@
 A Serverless Plugin for the [Serverless Framework](http://www.serverless.com) which
 helps with encrypting service secrets using the AWS Key Management Service (KMS)
 
-**THIS PLUGIN REQUIRES SERVERLESS V1.0 BETA OR NEWER!**
-
 ## Introduction
 
 This plugins does the following:
@@ -86,7 +84,7 @@ The variable must be decrypted in the Lambda function using the KMS decrypt meth
 
 ```js
 kms.decrypt({
-  CiphertextBlob: Buffer(config[val], 'base64')
+  CiphertextBlob: Buffer(process.env[MY_VARIABLE], 'base64')
 }).promise()
 .then(data => {
   const decrypted = String(data.Plaintext)
