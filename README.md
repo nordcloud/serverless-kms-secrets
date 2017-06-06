@@ -46,6 +46,10 @@ Add Decrypt permissions to your lambda function with e.g. this block in IamRoleS
 
 ## Usage
 
+### Creating KMS Key
+
+Create a KMS key in AWS IAM service, under Encryption keys. Collect the key id, which is the remaining part of the key ARN.
+
 ### Encrypting Variables
 
 To encrypt a variable using the key defined in the configuration, enter
@@ -84,7 +88,7 @@ The variable must be decrypted in the Lambda function using the KMS decrypt meth
 
 ```js
 kms.decrypt({
-  CiphertextBlob: Buffer(process.env[MY_VARIABLE], 'base64')
+  CiphertextBlob: Buffer(process.env.MY_VARIABLE, 'base64')
 }).promise()
 .then(data => {
   const decrypted = String(data.Plaintext)
