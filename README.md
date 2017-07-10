@@ -65,6 +65,8 @@ sls encrypt -n SLACK_API_TOKEN -v xoxp-1234567890-1234567890-123467890-a12346 -k
 The keyid (-k) parameter is mandatory for the first encrypted variable, but optional for the later ones (will be read from the secrets file).
 The encrypted variable is written to your secrets file (kms-secrets.[stage].[region].yml by default)
 
+NOTE: you may get warnings about the missing kms-secrets file when encrypting your first variables for a specific stage / region. The warning will go away once the file has been created by the plugin.
+
 ### Decrypting Variables
 
 The variables in the secrets file can be decrypted using
