@@ -92,8 +92,9 @@ class kmsSecretsPlugin {
     .then((inited) => {
       myModule.serverless.environment = inited.environment;
       const vars = new myModule.serverless.classes.Variables(myModule.serverless);
-      vars.populateService(this.options);
-
+      return vars.populateService(this.options).then(() => inited);
+    })
+    .then((inited) => {
       const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
 
       const region = this.options.region || inited.provider.region;
@@ -153,8 +154,9 @@ class kmsSecretsPlugin {
     .then((inited) => {
       myModule.serverless.environment = inited.environment;
       const vars = new myModule.serverless.classes.Variables(myModule.serverless);
-      vars.populateService(this.options);
-
+      return vars.populateService(this.options).then(() => inited);
+    })
+    .then((inited) => {
       const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
       
       const stage = this.options.stage || inited.provider.stage;
