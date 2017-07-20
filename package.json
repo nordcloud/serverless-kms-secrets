@@ -1,12 +1,14 @@
 {
   "name": "serverless-kms-secrets",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "engines": {
     "node": ">=4.0"
   },
   "description": "Serverless plugin for encrypting secrets using KMS",
   "author": "Mikael Puittinen (https://sc5.io)",
-  "contributors": [],
+  "contributors": [
+    "Martin Heidegger"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
