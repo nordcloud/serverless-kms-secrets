@@ -127,7 +127,7 @@ class kmsSecretsPlugin {
         KeyId: keyId, // The identifier of the CMK to use for encryption.
         // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
         // or the name or ARN of an alias that refers to the CMK.
-        Plaintext: Buffer(this.options.value), // eslint-disable-line new-cap
+        Plaintext: Buffer.from(String(this.options.value)), // eslint-disable-line new-cap
       }).promise()
       .then((data) => {
         kmsSecrets.secrets[this.options.name] = data.CiphertextBlob.toString('base64');
@@ -175,7 +175,7 @@ class kmsSecretsPlugin {
             AWS.config.update({ region });
             const kms = new AWS.KMS();
             kms.decrypt({
-              CiphertextBlob: Buffer(secrets[varName], 'base64'), // eslint-disable-line new-cap
+              CiphertextBlob: Buffer.from(secrets[varName], 'base64'), // eslint-disable-line new-cap
             }).promise()
             .then(data => {
               const secret = String(data.Plaintext);
