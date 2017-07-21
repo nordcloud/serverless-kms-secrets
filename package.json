@@ -1,6 +1,6 @@
 {
   "name": "serverless-kms-secrets",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "engines": {
     "node": ">=4.0"
   },
