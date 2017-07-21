@@ -8,9 +8,6 @@
 const fse = require('fs-extra');
 const BbPromise = require('bluebird');
 const yaml = require('yamljs');
-const AWS = require('aws-sdk');
-
-AWS.config.setPromisesDependency(BbPromise);
 
 function readFile(filePath) {
   return new BbPromise((resolve, reject) => {
@@ -121,14 +118,16 @@ class kmsSecretsPlugin {
         }
       }
 
-      AWS.config.update({ region });
-      const kms = new AWS.KMS();
-      kms.encrypt({
+      myModule.serverless.getProvider('aws')
+      .request('KMS',
+      'encrypt',
+      {
         KeyId: keyId, // The identifier of the CMK to use for encryption.
         // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
         // or the name or ARN of an alias that refers to the CMK.
         Plaintext: Buffer.from(String(this.options.value)), // eslint-disable-line new-cap
-      }).promise()
+      }, region, stage)
+      
       .then((data) => {
         kmsSecrets.secrets[this.options.name] = data.CiphertextBlob.toString('base64');
         kmsSecrets.keyArn = data.KeyId;
@@ -172,11 +171,12 @@ class kmsSecretsPlugin {
         const names = this.options.name ? [this.options.name] : Object.keys(secrets);
         names.forEach((varName) => {
           if (secrets[varName]) {
-            AWS.config.update({ region });
-            const kms = new AWS.KMS();
-            kms.decrypt({
-              CiphertextBlob: Buffer.from(secrets[varName], 'base64'), // eslint-disable-line new-cap
-            }).promise()
+            myModule.serverless.getProvider('aws')
+            .request('KMS',
+              'decrypt',
+              {
+                CiphertextBlob: Buffer.from(secrets[varName], 'base64'), // eslint-disable-line new-cap
+              }, region, stage)
             .then(data => {
               const secret = String(data.Plaintext);
               myModule.serverless.cli.log(`${varName} = ${secret}`);
