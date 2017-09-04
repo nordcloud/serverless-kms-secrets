@@ -74,6 +74,10 @@ class kmsSecretsPlugin {
         BbPromise.bind(this)
           .then(this.decryptVariable);
       },
+      'before:package:initialize': () => {
+        BbPromise.bind(this)
+          .then(this.encryptEnvVarsOnPackegeOrDeploy);
+      },
     };
   }
 
@@ -100,9 +104,7 @@ class kmsSecretsPlugin {
       const configFile =
         moduleConfig.secretsFile
           || `kms-secrets.${stage}.${region}.yml`;
-      let kmsSecrets = {
-        secrets: {}
-      };
+      let kmsSecrets = {};
       let keyId = this.options.keyid;
 
       if (fse.existsSync(configFile)) {
@@ -117,7 +119,9 @@ class kmsSecretsPlugin {
           return ('No keyId in serverless.yml')
         }
       }
-
+      if (!kmsSecrets.secrets) {
+        kmsSecrets.secrets = {};
+      }
       myModule.serverless.getProvider('aws')
       .request('KMS',
       'encrypt',
@@ -189,6 +193,64 @@ class kmsSecretsPlugin {
         });
       }, error => myModule.serverless.cli.log(error));
     }, error => myModule.serverless.cli.log(error));
+  }
+
+  encryptEnvVarsOnPackegeOrDeploy() {
+    const moduleConfig = (this.serverless.service.custom['serverless-kms-secrets']
+      && this.serverless.service.custom['serverless-kms-secrets'].secretsFile) ?
+      this.serverless.service.custom['serverless-kms-secrets'].secretsFile :
+      this.serverless.service.custom.kmsSecrets;
+
+    if (!moduleConfig || !moduleConfig.autoEncryptEnvVarOnPackageOrDeploy) {
+      return;
+    }
+    this.options.keyid = moduleConfig.keyArn;
+    this.envVariablesToEncrypt = moduleConfig.envVariablesToEncrypt;
+    if (!this.options.keyid || !this.envVariablesToEncrypt
+      || this.envVariablesToEncrypt.length === 0) {
+      this.serverless.cli.log('Serverless-Kms-Secrect: Kms key or Environment Variables not found for encryption');
+      return;
+    }
+
+    const envVars = this.serverless.service.provider.environment;
+    if (envVars) {
+      Object.keys(envVars).forEach((value) => {
+        if (this.envVariablesToEncrypt.indexOf(value) >= 0) {
+          this.kmsEncrypt(envVars[value]).then((encVal) => {
+            envVars[value] = encVal.CiphertextBlob.toString('base64');
+          })
+            .catch((err) => {
+              this.serverless.cli.log(err);
+            });
+        }
+      });
+    }
+
+    if (this.serverless.service.functions && typeof this.serverless.service.functions === 'object') {
+      const functions = this.serverless.service.functions;
+      Object.keys(functions).forEach((func) => {
+        if (functions[func].environment) {
+          Object.keys(functions[func].environment).forEach((envName) => {
+            if (this.envVariablesToEncrypt.indexOf(envName) >= 0) {
+              this.kmsEncrypt(functions[func].environment[envName]).then((encVal) => {
+                functions[func].environment[envName] = encVal.CiphertextBlob.toString('base64');
+              })
+                .catch((err) => {
+                  this.serverless.cli.log(err);
+                });
+            }
+          });
+        }
+      });
+    }
+  }
+
+  kmsEncrypt(Val) {
+    return this.serverless.getProvider('aws')
+      .request('KMS', 'encrypt', {
+        KeyId: this.options.keyid,
+        Plaintext: Buffer.from(String(Val)),
+      }, this.serverless.service.provider.region, this.serverless.service.provider.stage);
   }
 }
 

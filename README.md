@@ -97,10 +97,19 @@ kms.decrypt({
 })
 ```
 
+### Auto Encrypting Variables on Serverless Deploy or Package
+In your Kms Secrects file, set the following parameters. The encrypt command automatically creates a secrect file for you. If you have not used encryt command, then create secrect file manually before packaging or deploying.
+```yml
+  keyArn: 'arn:aws:kms:xx-xxxx-x:xxxxxxxxxxxx:key/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  autoEncryptEnvVarOnPackageOrDeploy: 1
+  envVariablesToEncrypt:
+    - envVar1
+    - envVar2
+    - envVar3
+```
 
 ## TODO
 
-* Add support for sls deploy (deploy as KMS encrypted environment variables)
 * Ease configuration (KeyIds / Arns in various places)
 
 ## Release History
