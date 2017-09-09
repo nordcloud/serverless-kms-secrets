@@ -65,6 +65,20 @@ sls encrypt -n SLACK_API_TOKEN -v xoxp-1234567890-1234567890-123467890-a12346 -k
 The keyid (-k) parameter is mandatory for the first encrypted variable, but optional for the later ones (will be read from the secrets file).
 The encrypted variable is written to your secrets file (kms-secrets.[stage].[region].yml by default)
 
+You may also pack multiple secrets into one KMS encrypted string. This simplifies consuming the secrets in the Lambda function since all secrets can be decrypted with one single KMS.Decrypt call. To encrypt multiple secrets into one single string, use the following notation:
+
+```
+sls encrypt -n VARIABLE_NAME:SECRET_NAME -v myvalue [-k keyId]
+```
+
+e.g.
+
+```
+sls encrypt -n SECRETS:SLACK_API_TOKEN -v xoxp-1234567890-1234567890-123467890-a12346 -k 999999-9999-99999-999
+```
+
+Would encrypt and add the SLACK_API_TOKEN into the (JSON) secret SECRETS.
+
 NOTE: you may get warnings about the missing kms-secrets file when encrypting your first variables for a specific stage / region. The warning will go away once the file has been created by the plugin.
 
 ### Decrypting Variables
@@ -97,6 +111,11 @@ kms.decrypt({
 })
 ```
 
+If MY_VARIABLE consists of multiple variables, decode it using
+
+```js
+  const secrets = JSON.parse(decrypted);
+```
 
 ## TODO
 
@@ -105,6 +124,7 @@ kms.decrypt({
 
 ## Release History
 
+* 2017/09/09 - v1.0.0 - Add support for multisecret structures
 * 2017/05/13 - v0.9.0 - Initial version
 
 

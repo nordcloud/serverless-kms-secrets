@@ -77,10 +77,28 @@ class kmsSecretsPlugin {
     };
   }
 
+
+  decrypt(secret, region, stage) {
+    const myModule = this;
+    return new Promise((success, failure) => {
+      myModule.serverless.getProvider('aws')
+      .request('KMS',
+        'decrypt',
+        {
+          CiphertextBlob: Buffer.from(secret, 'base64'), // eslint-disable-line new-cap
+        }, region, stage)
+      .then(data => {
+        success(String(data.Plaintext));
+      }, failure);
+    });
+  }
+
   encryptVariable() {
     const myModule = this;
     const stage = this.options.stage;
     const region = this.options.region;
+    const [varname, subvarname] = this.options.name.split(':');
+    let value = this.options.value;
 
     this.serverless.service.load({
       stage,
@@ -118,23 +136,51 @@ class kmsSecretsPlugin {
         }
       }
 
-      myModule.serverless.getProvider('aws')
-      .request('KMS',
-      'encrypt',
-      {
-        KeyId: keyId, // The identifier of the CMK to use for encryption.
-        // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
-        // or the name or ARN of an alias that refers to the CMK.
-        Plaintext: Buffer.from(String(this.options.value)), // eslint-disable-line new-cap
-      }, region, stage)
-      
-      .then((data) => {
-        kmsSecrets.secrets[this.options.name] = data.CiphertextBlob.toString('base64');
-        kmsSecrets.keyArn = data.KeyId;
-        fse.writeFileSync(configFile, yaml.stringify(kmsSecrets,2));
-        myModule.serverless.cli.log(`Updated ${this.options.name} to ${configFile}`);
-      }, error => {
-        myModule.serverless.cli.log(error);
+      let preEncrypt = () => {
+        return new Promise((succeed, fail) => {
+          if (subvarname) {
+            let valstruct = {};
+            if (kmsSecrets &&
+                kmsSecrets.secrets && 
+                kmsSecrets.secrets[varname]) {
+              this.decrypt(kmsSecrets.secrets[varname], region, stage)
+              .then(valtext => {
+                succeed(JSON.parse(valtext));
+              });
+            } else {
+              succeed({});
+            }
+          } else {
+            succeed({});
+          }
+        });
+      };
+
+      preEncrypt()
+      .then(valstruct => {
+        if (subvarname) {
+          valstruct[subvarname] = value;
+          value = JSON.stringify(valstruct);
+        }
+
+        myModule.serverless.getProvider('aws')
+        .request('KMS',
+        'encrypt',
+        {
+          KeyId: keyId, // The identifier of the CMK to use for encryption.
+          // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
+          // or the name or ARN of an alias that refers to the CMK.
+          Plaintext: Buffer.from(String(value)), // eslint-disable-line new-cap
+        }, region, stage)
+        
+        .then((data) => {
+          kmsSecrets.secrets[varname] = data.CiphertextBlob.toString('base64');
+          kmsSecrets.keyArn = data.KeyId;
+          fse.writeFileSync(configFile, yaml.stringify(kmsSecrets,2));
+          myModule.serverless.cli.log(`Updated ${varname} to ${configFile}`);
+        }, error => {
+          myModule.serverless.cli.log(error);
+        });
       });
     }, error => myModule.serverless.cli.log(error));
   }
@@ -170,15 +216,17 @@ class kmsSecretsPlugin {
       .then(secrets => {
         const names = this.options.name ? [this.options.name] : Object.keys(secrets);
         names.forEach((varName) => {
-          if (secrets[varName]) {
-            myModule.serverless.getProvider('aws')
-            .request('KMS',
-              'decrypt',
-              {
-                CiphertextBlob: Buffer.from(secrets[varName], 'base64'), // eslint-disable-line new-cap
-              }, region, stage)
-            .then(data => {
-              const secret = String(data.Plaintext);
+          const [mainVarName, subVarName] = varName.split(':');
+          if (secrets[mainVarName]) {
+            this.decrypt(secrets[mainVarName], region, stage)
+            .then(secret => {
+              if (subVarName) {
+                let varStruct = {};
+                if (secret) {
+                  varStruct = JSON.parse(secret);  
+                }
+                secret = varStruct[subVarName] || '';
+              }
               myModule.serverless.cli.log(`${varName} = ${secret}`);
             }, error => {
               myModule.serverless.cli.log(`KMS error ${error}`);
