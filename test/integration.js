@@ -24,15 +24,9 @@ describe('integration with stage option', () => {
   it('should contain encrypt and decrypt params in cli info', () => {
     const test = execSync(`${serverlessExec}`);
     const result = new Buffer(test, 'base64').toString();
-    expect(result).to.have.string(
-      'encrypt ....................... Encrypt variables to file'
-    );
-    expect(result).to.have.string(
-      'decrypt ....................... Decrypt variables from file'
-    );
-    expect(result).to.have.string(
-      'kmsSecretsPlugin'
-    );
+    expect(result).to.have.string('encrypt ....................... Encrypt variables to file');
+    expect(result).to.have.string('decrypt ....................... Decrypt variables from file');
+    expect(result).to.have.string('kmsSecretsPlugin');
   });
 
   // it('should create test for hello function', () => {

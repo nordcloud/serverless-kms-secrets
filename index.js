@@ -128,12 +128,12 @@ class kmsSecretsPlugin {
             keyId = kmsSecrets.keyArn.replace(/.*\//, '');
             myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
           }
-        } else if (! this.options.keyid) {
+        } else if (!this.options.keyid) {
           myModule.serverless.cli.log(`No config file ${configFile} and no keyid specified`);
           return ('No keyId in serverless.yml');
         }
 
-        const preEncrypt = () => {
+        function preEncrypt() {
           return new Promise((succeed) => {
             if (subvarname) {
               if (kmsSecrets &&
@@ -150,9 +150,9 @@ class kmsSecretsPlugin {
               succeed({});
             }
           });
-        };
+        }
 
-        preEncrypt()
+        return preEncrypt()
           .then((valstruct) => {
             if (subvarname) {
               const newStruct = valstruct;
@@ -178,7 +178,9 @@ class kmsSecretsPlugin {
                 myModule.serverless.cli.log(error);
               });
           });
-      }, error => myModule.serverless.cli.log(error));
+      }, (error) => {
+        myModule.serverless.cli.log(error);
+      });
   }
 
   // Decrypt a variable defined in the options
