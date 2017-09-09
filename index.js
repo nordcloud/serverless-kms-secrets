@@ -97,7 +97,9 @@ class kmsSecretsPlugin {
     const myModule = this;
     let stage = this.options.stage;
     let region = this.options.region;
-    const [varname, subvarname] = this.options.name.split(':');
+    const parts = this.options.name.split(':');
+    const varname = parts[0];
+    const subvarname = parts[1];
     let value = this.options.value;
 
     this.serverless.service.load({
@@ -213,7 +215,10 @@ class kmsSecretsPlugin {
           .then((secrets) => {
             const names = this.options.name ? [this.options.name] : Object.keys(secrets);
             names.forEach((varName) => {
-              const [mainVarName, subVarName] = varName.split(':');
+              const parts = varName.split(':');
+              const mainVarName = parts[0];
+              const subVarName = parts[1];
+
               if (secrets[mainVarName]) {
                 this.decrypt(secrets[mainVarName], region, stage)
                   .then((secret) => {
