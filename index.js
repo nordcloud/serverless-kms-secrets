@@ -141,7 +141,7 @@ class kmsSecretsPlugin {
               if (kmsSecrets &&
                   kmsSecrets.secrets &&
                   kmsSecrets.secrets[varname]) {
-                this.decrypt(kmsSecrets.secrets[varname], region, stage)
+                myModule.decrypt(kmsSecrets.secrets[varname], region, stage)
                   .then((valtext) => {
                     succeed(JSON.parse(valtext));
                   });
@@ -220,7 +220,7 @@ class kmsSecretsPlugin {
               const subVarName = parts[1];
 
               if (secrets[mainVarName]) {
-                this.decrypt(secrets[mainVarName], region, stage)
+                myModule.decrypt(secrets[mainVarName], region, stage)
                   .then((secret) => {
                     if (subVarName) {
                       let varStruct = {};
