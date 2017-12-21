@@ -5,14 +5,14 @@
     "node": ">=4.0"
   },
   "description": "Serverless plugin for encrypting secrets using KMS",
-  "author": "Mikael Puittinen (https://sc5.io)",
+  "author": "Mikael Puittinen (https://nordcloud.com)",
   "contributors": [
     "Martin Heidegger"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SC5/serverless-kms-secrets.git"
+    "url": "git+https://github.com/nordcloud/serverless-kms-secrets.git"
   },
   "keywords": [
     "serverless framework plugin",
@@ -54,9 +54,9 @@
     "yamljs": "^0.2.10"
   },
   "bugs": {
-    "url": "https://github.com/SC5/serverless-kms-secrets/issues"
+    "url": "https://github.com/nordcloud/serverless-kms-secrets/issues"
   },
-  "homepage": "https://github.com/SC5/serverless-kms-secrets#readme",
+  "homepage": "https://github.com/nordcloud/serverless-kms-secrets#readme",
   "directories": {
     "test": "test"
   }

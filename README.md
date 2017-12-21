@@ -130,5 +130,5 @@ If MY_VARIABLE consists of multiple variables, decode it using
 
 ## License
 
-Copyright (c) 2017 [SC5](http://sc5.io/), licensed for users and contributors under MIT license.
-https://github.com/SC5/serverless-kms-secrets/blob/master/LICENSE
+Copyright (c) 2017 [Nordcloud](https://nordcloud.com/), licensed for users and contributors under MIT license.
+https://github.com/nordcloud/serverless-kms-secrets/blob/master/LICENSE
