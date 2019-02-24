@@ -124,6 +124,7 @@ If MY_VARIABLE consists of multiple variables, decode it using
 
 ## Release History
 
+* 2019/02/24 - v1.0.4 - Fix issue with serverless 1.33
 * 2017/09/09 - v1.0.0 - Add support for multisecret structures
 * 2017/05/13 - v0.9.0 - Initial version
 
