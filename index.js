@@ -111,12 +111,10 @@ class kmsSecretsPlugin {
           region = this.options.region || inited.provider.region;
           stage = this.options.stage || inited.provider.stage;
 
-          console.log('moduleConfig', moduleConfig);
           const configFile =
             moduleConfig.secretsFile
               || `kms-secrets.${stage}.${region}.yml`;
           const { filePerStage = true } = moduleConfig;
-          console.log('filePerStage', filePerStage);
           let kmsSecrets = {
             secrets: {},
           };
@@ -126,7 +124,6 @@ class kmsSecretsPlugin {
           if (fse.existsSync(configFile)) {
             configData = yaml.load(configFile);
             kmsSecrets = filePerStage ? configData : configData[stage];
-            console.log(kmsSecrets);
             if (!keyId) {
               keyId = kmsSecrets.keyArn.replace(/.*\//, '');
               myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
