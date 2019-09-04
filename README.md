@@ -117,6 +117,45 @@ If MY_VARIABLE consists of multiple variables, decode it using
   const secrets = JSON.parse(decrypted);
 ```
 
+### Using one secret file for multiple stages
+
+Rather than having one secret file per stage, you can have one secret file with multiple stages.
+
+Add the `perStage` configuration parameters to your `serverless.yml` configuration file.
+
+```yml
+custom:
+  serverless-kms-secrets:
+    secretsFile: kms-secrets.yml
+    filePerStage: false # true = one file per stage, false = one file, defaults to true
+  kmsSecrets: ${file(kms-secrets.yml)}
+```
+
+Specify the `stage` when encrypting the variable.
+
+```
+sls encrypt -n VARIABLE_NAME -v myvalue [-k keyId] --stage
+```
+
+The encrypt command will also use the `provider.stage` value in the `serverless.yml` configuration file.
+
+```yml
+provider:
+  stage: ${opt:stage, env:stage, 'dev'}
+```
+
+```
+sls encrypt -n VARIABLE_NAME:SECRET_NAME -v myvalue [-k keyId]
+```
+
+Reference the stage when using the variable in the `provider.environment` section of the `serverless.yml` configuration file.
+
+```yml
+  environment:
+    MY_VARIABLE: ${self:custom.kmsSecrets.${self:provider.stage}.secrets.MY_VARIABLE}
+```
+
+
 ## TODO
 
 * Add support for sls deploy (deploy as KMS encrypted environment variables)
