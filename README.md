@@ -165,7 +165,7 @@ Reference the stage when using the variable in the `provider.environment` sectio
 
 ```yml
   environment:
-    MY_VARIABLE: ${self:custom.kmsSecrets.${self:provider.stage}.secrets.MY_VARIABLE}
+    MY_VARIABLE: ${self:custom.kmsSecrets.${self:provider.stage}.secrets.VARIABLE_NAME}
 ```
 
 
