@@ -134,7 +134,7 @@ custom:
 Specify the `stage` when encrypting the variable.
 
 ```
-sls encrypt -n VARIABLE_NAME -v myvalue [-k keyId] --stage
+sls encrypt -n VARIABLE_NAME -v myvalue [-k keyId] --stage dev
 ```
 
 The encrypt command will also use the `provider.stage` value in the `serverless.yml` configuration file.
@@ -145,7 +145,20 @@ provider:
 ```
 
 ```
-sls encrypt -n VARIABLE_NAME:SECRET_NAME -v myvalue [-k keyId]
+sls encrypt -n VARIABLE_NAME -v myvalue [-k keyId]
+```
+
+Your `kms-secrets.yml` file has the stage in the first level.
+
+```yml
+dev:
+  secrets:
+    VARIABLE_NAME: encrypted_data
+  keyArn: key_arn
+prd:
+  secrets:
+    VARIABLE_NAME: encrypted_data
+  keyArn: key_arn
 ```
 
 Reference the stage when using the variable in the `provider.environment` section of the `serverless.yml` configuration file.
