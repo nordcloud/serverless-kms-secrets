@@ -111,11 +111,12 @@ class kmsSecretsPlugin {
           region = this.options.region || inited.provider.region;
           stage = this.options.stage || inited.provider.stage;
 
+          console.log('moduleConfig', moduleConfig);
           const configFile =
             moduleConfig.secretsFile
               || `kms-secrets.${stage}.${region}.yml`;
-          const perStage = moduleConfig.perStage || false;
-          console.log('perStage', perStage);
+          const { filePerStage = true } = moduleConfig;
+          console.log('filePerStage', filePerStage);
           let kmsSecrets = {
             secrets: {},
           };
@@ -124,9 +125,8 @@ class kmsSecretsPlugin {
 
           if (fse.existsSync(configFile)) {
             configData = yaml.load(configFile);
-            console.log('configData', configData);
-            kmsSecrets = perStage ? configData[stage]: configData;
-            console.log('kmsSecrets', kmsSecrets);
+            kmsSecrets = filePerStage ? configData : configData[stage];
+            console.log(kmsSecrets);
             if (!keyId) {
               keyId = kmsSecrets.keyArn.replace(/.*\//, '');
               myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
@@ -175,10 +175,10 @@ class kmsSecretsPlugin {
                 .then((data) => {
                   kmsSecrets.secrets[varname] = data.CiphertextBlob.toString('base64');
                   kmsSecrets.keyArn = data.KeyId;
-                  if (perStage) {
-                    configData[stage] = kmsSecrets;
-                  } else {
+                  if (filePerStage) {
                     configData = kmsSecrets;
+                  } else {
+                    configData[stage] = kmsSecrets;
                   }
                   fse.writeFileSync(configFile, yaml.stringify(configData, 3, 2));
                   myModule.serverless.cli.log(`Updated ${varname} to ${configFile}`);
