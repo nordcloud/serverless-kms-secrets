@@ -164,6 +164,7 @@ prd:
 Reference the stage when using the variable in the `provider.environment` section of the `serverless.yml` configuration file.
 
 ```yml
+provider:
   environment:
     MY_VARIABLE: ${self:custom.kmsSecrets.${self:provider.stage}.secrets.VARIABLE_NAME}
 ```
