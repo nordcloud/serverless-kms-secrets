@@ -115,7 +115,7 @@ class kmsSecretsPlugin {
         const defaultConfigFileSingle = `kms-secrets.${region}.yml`;
         const configFile =
           moduleConfig.secretsFile
-            || (filePerStage ?  defaultConfigFileStage : defaultConfigFileSingle);
+            || (filePerStage ? defaultConfigFileStage : defaultConfigFileSingle);
         let kmsSecrets = {
           secrets: {},
         };
@@ -124,13 +124,11 @@ class kmsSecretsPlugin {
 
         if (fse.existsSync(configFile)) {
           configData = yaml.load(configFile);
-          //kmsSecrets = filePerStage ? configData : configData[stage];
+          // kmsSecrets = filePerStage ? configData : configData[stage];
           if (filePerStage) {
             kmsSecrets = configData;
-          } else {
-            if (stage in configData) {
-              kmsSecrets = configData[stage];
-            }
+          } else if (stage in configData) {
+            kmsSecrets = configData[stage];
           }
           if (!keyId) {
             keyId = kmsSecrets.keyArn.replace(/.*\//, '');
