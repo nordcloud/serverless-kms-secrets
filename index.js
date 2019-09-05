@@ -121,7 +121,6 @@ class kmsSecretsPlugin {
         };
         let keyId = this.options.keyid;
         let configData = {};
-        console.log('kmsSecrets', kmsSecrets);
 
         if (fse.existsSync(configFile)) {
           configData = yaml.load(configFile);
