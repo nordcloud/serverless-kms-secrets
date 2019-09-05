@@ -88,169 +88,170 @@ class kmsSecretsPlugin {
   }
 
   encryptVariable() {
-    return new Promise((resolve, reject) => {
-      const myModule = this;
-      let stage = this.options.stage;
-      let region = this.options.region;
-      const parts = this.options.name.split(':');
-      const varname = parts[0];
-      const subvarname = parts[1];
-      let value = this.options.value;
+    const myModule = this;
+    let stage = this.options.stage;
+    let region = this.options.region;
+    const parts = this.options.name.split(':');
+    const varname = parts[0];
+    const subvarname = parts[1];
+    let value = this.options.value;
 
-      this.serverless.service.load({
-        stage,
-        region,
+    return this.serverless.service.load({
+      stage,
+      region,
+    })
+      .then((inited) => {
+        myModule.serverless.environment = inited.environment;
+        const vars = new myModule.serverless.classes.Variables(myModule.serverless);
+        return vars.populateService(this.options).then(() => inited);
       })
-        .then((inited) => {
-          myModule.serverless.environment = inited.environment;
-          const vars = new myModule.serverless.classes.Variables(myModule.serverless);
-          return vars.populateService(this.options).then(() => inited);
-        })
-        .then((inited) => {
-          const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
-          region = this.options.region || inited.provider.region;
-          stage = this.options.stage || inited.provider.stage;
+      .then((inited) => {
+        const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
+        region = this.options.region || inited.provider.region;
+        stage = this.options.stage || inited.provider.stage;
 
-          const configFile =
-            moduleConfig.secretsFile
-              || `kms-secrets.${stage}.${region}.yml`;
-          const { filePerStage = true } = moduleConfig;
-          let kmsSecrets = {
-            secrets: {},
-          };
-          let configData;
-          let keyId = this.options.keyid;
+        const filePerStage = ('filePerStage' in moduleConfig) ? moduleConfig.filePerStage : true;
+        const defaultConfigFileStage = `kms-secrets.${stage}.${region}.yml`;
+        const defaultConfigFileSingle = `kms-secrets.${region}.yml`;
+        const configFile =
+          moduleConfig.secretsFile
+            || (filePerStage ?  defaultConfigFileStage : defaultConfigFileSingle);
+        let kmsSecrets = {
+          secrets: {},
+        };
+        let keyId = this.options.keyid;
+        let configData = {};
+        console.log('kmsSecrets', kmsSecrets);
 
-          if (fse.existsSync(configFile)) {
-            configData = yaml.load(configFile);
-            kmsSecrets = filePerStage ? configData : configData[stage];
-            if (!keyId) {
-              keyId = kmsSecrets.keyArn.replace(/.*\//, '');
-              myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
+        if (fse.existsSync(configFile)) {
+          configData = yaml.load(configFile);
+          //kmsSecrets = filePerStage ? configData : configData[stage];
+          if (filePerStage) {
+            kmsSecrets = configData;
+          } else {
+            if (stage in configData) {
+              kmsSecrets = configData[stage];
             }
-          } else if (!this.options.keyid) {
-            myModule.serverless.cli.log(`No config file ${configFile} and no keyid specified`);
-            reject('No keyId in serverless.yml');
           }
+          if (!keyId) {
+            keyId = kmsSecrets.keyArn.replace(/.*\//, '');
+            myModule.serverless.cli.log(`Encrypting using key ${keyId} found in ${configFile}`);
+          }
+        } else if (!this.options.keyid) {
+          myModule.serverless.cli.log(`No config file ${configFile} and no keyid specified`);
+          return ('No keyId in serverless.yml');
+        }
 
-          function preEncrypt() {
-            return new Promise((succeed) => {
-              if (subvarname) {
-                if (kmsSecrets &&
-                    kmsSecrets.secrets &&
-                    kmsSecrets.secrets[varname]) {
-                  myModule.decrypt(kmsSecrets.secrets[varname], region, stage)
-                    .then((valtext) => {
-                      succeed(JSON.parse(valtext));
-                    });
-                } else {
-                  succeed({});
-                }
+        function preEncrypt() {
+          return new Promise((succeed) => {
+            if (subvarname) {
+              if (kmsSecrets &&
+                  kmsSecrets.secrets &&
+                  kmsSecrets.secrets[varname]) {
+                myModule.decrypt(kmsSecrets.secrets[varname], region, stage)
+                  .then((valtext) => {
+                    succeed(JSON.parse(valtext));
+                  });
               } else {
                 succeed({});
               }
-            });
-          }
+            } else {
+              succeed({});
+            }
+          });
+        }
 
-          return preEncrypt()
-            .then((valstruct) => {
-              if (subvarname) {
-                const newStruct = valstruct;
-                newStruct[subvarname] = value;
-                value = JSON.stringify(newStruct);
-              }
+        return preEncrypt()
+          .then((valstruct) => {
+            if (subvarname) {
+              const newStruct = valstruct;
+              newStruct[subvarname] = value;
+              value = JSON.stringify(newStruct);
+            }
 
-              myModule.serverless.getProvider('aws')
-                .request('KMS',
-                  'encrypt',
-                  {
-                    KeyId: keyId, // The identifier of the CMK to use for encryption.
-                    // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
-                    // or the name or ARN of an alias that refers to the CMK.
-                    Plaintext: Buffer.from(String(value)), // eslint-disable-line new-cap
-                  }, region, stage)
-                .then((data) => {
-                  kmsSecrets.secrets[varname] = data.CiphertextBlob.toString('base64');
-                  kmsSecrets.keyArn = data.KeyId;
-                  if (filePerStage) {
-                    configData = kmsSecrets;
-                  } else {
-                    configData[stage] = kmsSecrets;
-                  }
-                  fse.writeFileSync(configFile, yaml.stringify(configData, 3, 2));
-                  myModule.serverless.cli.log(`Updated ${varname} to ${configFile}`);
-                  resolve();
-                }, (error) => {
-                  myModule.serverless.cli.log(error);
-                  reject(error);
-                });
-            });
-        }, (error) => {
-          myModule.serverless.cli.log(error);
-          reject(error);
-        });
-    });
+            return myModule.serverless.getProvider('aws')
+              .request('KMS',
+                'encrypt',
+                {
+                  KeyId: keyId, // The identifier of the CMK to use for encryption.
+                  // You can use the key ID or Amazon Resource Name (ARN) of the CMK,
+                  // or the name or ARN of an alias that refers to the CMK.
+                  Plaintext: Buffer.from(String(value)), // eslint-disable-line new-cap
+                }, region, stage)
+              .then((data) => {
+                kmsSecrets.secrets[varname] = data.CiphertextBlob.toString('base64');
+                kmsSecrets.keyArn = data.KeyId;
+                if (filePerStage) {
+                  configData = kmsSecrets;
+                } else {
+                  configData[stage] = kmsSecrets;
+                }
+                fse.writeFileSync(configFile, yaml.stringify(configData, 3, 2));
+                myModule.serverless.cli.log(`Updated ${varname} to ${configFile}`);
+              }, (error) => {
+                myModule.serverless.cli.log(error);
+              });
+          });
+      }, (error) => {
+        myModule.serverless.cli.log(error);
+      });
   }
 
   // Decrypt a variable defined in the options
   decryptVariable() {
-    return new Promise((resolve, reject) => {
-      const myModule = this;
+    const myModule = this;
 
-      let stage = this.options.stage;
-      let region = this.options.region;
+    let stage = this.options.stage;
+    let region = this.options.region;
 
-      this.serverless.service.load({
-        stage,
-        region,
+    this.serverless.service.load({
+      stage,
+      region,
+    })
+      .then((inited) => {
+        myModule.serverless.environment = inited.environment;
+        const vars = new myModule.serverless.classes.Variables(myModule.serverless);
+        return vars.populateService(this.options).then(() => inited);
       })
-        .then((inited) => {
-          myModule.serverless.environment = inited.environment;
-          const vars = new myModule.serverless.classes.Variables(myModule.serverless);
-          return vars.populateService(this.options).then(() => inited);
-        })
-        .then((inited) => {
-          const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
-          stage = this.options.stage || inited.provider.stage;
-          region = this.options.region || inited.provider.region;
+      .then((inited) => {
+        const moduleConfig = inited.custom['serverless-kms-secrets'] || {};
+        stage = this.options.stage || inited.provider.stage;
+        region = this.options.region || inited.provider.region;
 
-          const configFile =
-            moduleConfig.secretsFile
-              || `kms-secrets.${stage}.${region}.yml`;
-          myModule.serverless.cli.log(`Decrypting secrets from ${configFile}`);
+        const configFile =
+          moduleConfig.secretsFile
+            || `kms-secrets.${stage}.${region}.yml`;
+        myModule.serverless.cli.log(`Decrypting secrets from ${configFile}`);
 
-          readFile(configFile)
-            .then((secrets) => {
-              const names = this.options.name ? [this.options.name] : Object.keys(secrets);
-              names.forEach((varName) => {
-                const parts = varName.split(':');
-                const mainVarName = parts[0];
-                const subVarName = parts[1];
+        readFile(configFile)
+          .then((secrets) => {
+            const names = this.options.name ? [this.options.name] : Object.keys(secrets);
+            names.forEach((varName) => {
+              const parts = varName.split(':');
+              const mainVarName = parts[0];
+              const subVarName = parts[1];
 
-                if (secrets[mainVarName]) {
-                  myModule.decrypt(secrets[mainVarName], region, stage)
-                    .then((secret) => {
-                      if (subVarName) {
-                        let varStruct = {};
-                        if (secret) {
-                          varStruct = JSON.parse(secret);
-                        }
-                        myModule.serverless.cli.log(`${varName} = ${varStruct[subVarName] || ''}`);
-                      } else {
-                        myModule.serverless.cli.log(`${varName} = ${secret}`);
+              if (secrets[mainVarName]) {
+                myModule.decrypt(secrets[mainVarName], region, stage)
+                  .then((secret) => {
+                    if (subVarName) {
+                      let varStruct = {};
+                      if (secret) {
+                        varStruct = JSON.parse(secret);
                       }
-                    }, (error) => {
-                      myModule.serverless.cli.log(`KMS error ${error}`);
-                      reject(error);
-                    });
-                } else {
-                  myModule.serverless.cli.log(`No secret with name ${varName}`);
-                  resolve();
-                }
-              });
-            }, error => myModule.serverless.cli.log(error));
-        }, error => myModule.serverless.cli.log(error));
-    });
+                      myModule.serverless.cli.log(`${varName} = ${varStruct[subVarName] || ''}`);
+                    } else {
+                      myModule.serverless.cli.log(`${varName} = ${secret}`);
+                    }
+                  }, (error) => {
+                    myModule.serverless.cli.log(`KMS error ${error}`);
+                  });
+              } else {
+                myModule.serverless.cli.log(`No secret with name ${varName}`);
+              }
+            });
+          }, error => myModule.serverless.cli.log(error));
+      }, error => myModule.serverless.cli.log(error));
   }
 }
 
