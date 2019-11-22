@@ -1,7 +1,9 @@
-# Serverless KMS Secrets
+# Serverless KMS Secrets (DEPRECATED)
 
 A Serverless Plugin for the [Serverless Framework](http://www.serverless.com) which
 helps with encrypting service secrets using the AWS Key Management Service (KMS)
+
+**THIS MODULE IS  NO LONGER MAINTAINED. The best practice for managing secrets, also supported out-of-the-box by Serverless Framework, is to use the AWS SSM parameter store. See https://serverless.com/framework/docs/providers/aws/guide/variables/#reference-variables-using-the-ssm-parameter-store**
 
 ## Introduction
 
